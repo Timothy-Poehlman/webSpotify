@@ -3,7 +3,8 @@
 */
 
 import React from 'react';
-import Player from './Player.js'
+import Player from './Player.js';
+import PlaylistLinkForm from './PlaylistConverter.js';
 import hash from "./hash";
 import logo from './logo192.png';
 import * as $ from 'jquery';
@@ -117,7 +118,10 @@ export default class App extends React.Component {
                         />
                     )}
 
-                    
+                    {/* Youtube -> Spotify playlist conversion */}
+                    {this.state.token && (
+                        <PlaylistLinkForm/>
+                    )}
                 </header>
             </div>
         );
