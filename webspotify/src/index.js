@@ -1,36 +1,16 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import response from 'react';
-import { SpotifyApiContext } from 'react-spotify-api';
-import './index.css';
+import App, * as application from './App.js';
 
-const clientID = ""
-
-const element = <h1>test</h1>;
-
-//sets the clock
-class tick extends React.Component {
-    render() {
-        const clock = (
-            <div>
-                Current Time: {new Date().toLocaleTimeString()}
-            </div>
-        );
-        ReactDOM.render(
-            clock, 
-            document.getElementById('clock')
-        );
-    }
+function clock(){
+    ReactDOM.render(<application.Clock />, document.getElementById('clock'));
 }
-setInterval(tick, 1000);
 
-//SPOTIFY
-
-
-
+setInterval(clock, 1000);
 
 //full render of body
 ReactDOM.render(
-    element,
+    <App />,
     document.getElementById('root')
 );
+
