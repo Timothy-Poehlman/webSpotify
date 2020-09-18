@@ -57,12 +57,12 @@ function getPlaylist(link)
         return "could not find id";
     }
 
-    axios.get('https://www.googleapis.com/youtube/v3/playlistItems?playlistId=' + id + '&part=snippet')
+    axios.get('https://www.googleapis.com/youtube/v3/playlistItems?playlistId=' + id + '&part=snippet&key='+youtubeKey)
         .then(res => {
-            data = res.data;
+            data = res.data.items[0];
         })
 
-    console.log(data.title);
+    console.log(data.snippit.title);
 }
 
 /*
