@@ -6,7 +6,6 @@ import React from 'react';
 import Player from './Player.js';
 import hash from "./hash";
 import logo from './logo192.png';
-import { useForm, useField, splitFormProps } from 'react-form';
 import axios from 'axios';
 import * as $ from 'jquery';
 import './index.css';
@@ -21,49 +20,6 @@ const scopes = [
     "playlist-modify",
     "playlist-modify-private",
 ];
-
-const {
-    Form,
-    meta: { isSubmitting, canSubmit }
-} = useForm({
-    onSubmit: async (values, instance) => {
-        //send values to getPlaylist, once names are retrieved send info to giveToSpotify to convert
-        console.log(values);
-        var playlist = await this.getPlaylist(values.playlistLink);
-        console.log("Got Playlist!");
-        //find corresponding id
-        var index;
-        for(var i=0;i<this.state.userPlaylists.length;i++)
-        {
-            if(values.playlistName == this.state.userPlaylists[i]){index=i;break;}
-        }
-        this.giveToSpotify(playlist, values.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
-    }
-})
-// from React Form- Basic Form example by tannerlinsley
-const InputField = React.forwardRef((props, ref) => {
-    // Let's use splitFormProps to get form-specific props
-    const [field, fieldOptions, rest] = splitFormProps(props);
-
-    // Use the useField hook with a field and field options
-    // to access field state
-    const {
-        meta: { error, isTouched, isValidating },
-        getInputProps
-    } = useField(field, fieldOptions);
-
-    // Build the field
-    return (
-        <>
-            <input {...getInputProps({ ref, ...rest })} />{" "}
-            {isValidating ? (
-                <em>Validating...</em>
-            ) : isTouched && error ? (
-                <em>{error}</em>
-            ) : null}
-        </>
-    );
-});
 
 //sets the clock
 export class Clock extends React.Component {
@@ -97,11 +53,19 @@ export default class App extends React.Component {
             user_id: null,
             userPlaylists: [],
             userPlaylistsIds: [],
+            playlistUris: [],
+            //input stuff
+
         };
         this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
         this.getUserInfo = this.getUserInfo.bind(this);
         this.getUserPlaylists = this.getUserPlaylists.bind(this);
         this.tick = this.tick.bind(this);
+        this.validate = this.validate.bind(this);
+        this.giveToSpotify = this.giveToSpotify.bind(this);
+        this.getPlaylist = this.getPlaylist.bind(this);
+        this.createSpotifyPlaylist = this.createSpotifyPlaylist.bind(this);
+        //this.MultiSelectField = this.MultiSelectField.bind(this);
     }
 
     componentDidMount() {
@@ -226,29 +190,28 @@ export default class App extends React.Component {
     
         //convert youtube list to best fitting spotify playlist song names - for now it just searches the title, but later we can try to extract the name of the artist
         for (var i = 0; i < youtubePlaylist.length; i++) {
-            playlist.push(
-                await $.ajax({
-                    url: "https://api.spotify.com/v1/search",
-                    type: "GET",
-                    data: JSON.stringify({q:youtubePlaylist[i].snippet.title, type:"track"}),
-                    beforeSend: (xhr) => {
-                        xhr.setRequestHeader("Authorization", "Bearer " + token);
-                    },
-                    error: function (response) {
-                        alert(response.statusText);
-                        console.log(response.statusText);
-                        console.log("failed");
-                    },
-                    success: (data) => {
-                        if(data.length == 0)
-                        {
-                            console.log(data.tracks.items);
-                            return data.tracks.items[0].uri;
-                        }
-                        else{console.log("Could not find song");}
+            $.ajax({
+                url: "https://api.spotify.com/v1/search",
+                type: "GET",
+                data: JSON.stringify({q:youtubePlaylist[i].snippet.title, type:"track"}),
+                beforeSend: (xhr) => {
+                    xhr.setRequestHeader("Authorization", "Bearer " + token);
+                },
+                error: function (response) {
+                    alert(response.statusText);
+                    console.log(response.statusText);
+                    console.log("failed");
+                },
+                success: (data) => {
+                    if(data.length == 0)
+                    {
+                        this.setState({
+                            playlistUri: this.state.playlistUris.push(data.tracks.items[0].uri),
+                        });
                     }
-                })
-            );
+                    else{console.log("Could not find song");}
+                }
+            });
         }
         console.log(playlist);
     
@@ -356,39 +319,61 @@ export default class App extends React.Component {
         }
     }
 
-    MultiSelectField(props) {
-        const [field, fieldOptions, { options, ...rest }] = splitFormProps(props);
+    // MultiSelectField(props) {
+    //     const [field, fieldOptions, { options, ...rest }] = splitFormProps(props);
     
-        const {
-            value = [],
-            setValue,
-            meta: { isTouched, error }
-        } = useField(field, fieldOptions);
+    //     const {
+    //         value = [],
+    //         setValue,
+    //         meta: { isTouched, error }
+    //     } = useField(field, fieldOptions);
     
-        const handleSelectChange = e => {
-            const selected = Array.from(e.target.options)
-                .filter(option => option.selected)
-                .map(option => option.value);
+    //     const handleSelectChange = e => {
+    //         const selected = Array.from(e.target.options)
+    //             .filter(option => option.selected)
+    //             .map(option => option.value);
     
-            setValue(selected);
-        };
+    //         setValue(selected);
+    //     };
     
-        return (
-            <>
-                <select {...rest} value={value} onChange={handleSelectChange} multiple>
-                    <option disabled value="" />
-                    {options.map((option) => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
-                {isTouched && error ? <em>{error}</em> : null}
-            </>
-        );
+    //     return (
+    //         <>
+    //             <select {...rest} value={value} onChange={handleSelectChange} multiple>
+    //                 <option disabled value="" />
+    //                 {options.map((option) => (
+    //                     <option key={option} value={option}>
+    //                         {option}
+    //                     </option>
+    //                 ))}
+    //             </select>
+    //             {isTouched && error ? <em>{error}</em> : null}
+    //         </>
+    //     );
+    // }
+
+    handleChange(event) {
+        this.setState({})
     }
     
     render() {
+        // const  {
+        //     Form,
+        //     meta: { isSubmitting, canSubmit }
+        // } = useForm({
+        //     onSubmit: async (values, instance) => {
+        //         //send values to getPlaylist, once names are retrieved send info to giveToSpotify to convert
+        //         console.log(values);
+        //         var playlist = await this.getPlaylist(values.playlistLink);
+        //         console.log("Got Playlist!");
+        //         //find corresponding id
+        //         var index;
+        //         for(var i=0;i<this.state.userPlaylists.length;i++)
+        //         {
+        //             if(values.playlistName == this.state.userPlaylists[i]){index=i;break;}
+        //         }
+        //         this.giveToSpotify(playlist, values.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
+        //     }
+        // })
         return (
             <div className="App">
                 <header className="App-header">
@@ -412,33 +397,36 @@ export default class App extends React.Component {
                     {this.state.token && (
                         <div className="App">
                             <div className="main-wrapper">
-                                <Form>
+                                <form>
                                     <div>
                                         <label>
-                                            Youtube Playlist Link: <InputField field="playlistLink" validate={value => (!value ? "Required" : false)} />
+                                            Youtube Playlist Link: 
+                                            <input type="text" name="playlistLink" />
                                         </label>
                                     </div>
                                     <div id="playlistNameInput">
                                         <label>
-                                            Spotify Playlist Name (Only Required if creating a new Playlist): <InputField field="playlistReName" validate={value => (!value ? "Required" : false)} />
+                                            Spotify Playlist Name (Only Required if creating a new Playlist):
+                                            <input type="text" name="playlistReName" />
                                         </label>
-                                        <label>
+                                        <select>
                                             Choose Playlist:{" "}
-                                            <this.MultiSelectField
+                                            {this.state.userPlaylists.map((name)=> {
+                                                return <option value={name}>{name}</option>
+                                            })}
+                                            {/* <this.MultiSelectField
                                                 field="playlistName"
                                                 options={
                                                     this.state.userPlaylists
                                                 }
                                                 validate={value => (!value ? "Required" : false)}
-                                            />
-                                        </label>
+                                            /> */}
+                                        </select>
                                     </div>
                                     <div>
-                                        <button type="submit" disabled={!canSubmit}>
-                                            Submit
-                                        </button>
+                                        <input type="submit" value="Submit"/>
                                     </div>
-                                </Form>
+                                </form>
                             </div>
                         </div>
                     )}
