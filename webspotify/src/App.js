@@ -55,7 +55,9 @@ export default class App extends React.Component {
             userPlaylistsIds: [],
             playlistUris: [],
             //input stuff
-
+            playlistLink: null,
+            playlistReName: null,
+            playlistName: null,
         };
         this.getCurrentlyPlaying = this.getCurrentlyPlaying.bind(this);
         this.getUserInfo = this.getUserInfo.bind(this);
@@ -65,7 +67,8 @@ export default class App extends React.Component {
         this.giveToSpotify = this.giveToSpotify.bind(this);
         this.getPlaylist = this.getPlaylist.bind(this);
         this.createSpotifyPlaylist = this.createSpotifyPlaylist.bind(this);
-        //this.MultiSelectField = this.MultiSelectField.bind(this);
+        this.handleChange = this.handleChange.bind(this);
+        this.handleSubmit = this.handleSubmit.bind(this);
     }
 
     componentDidMount() {
@@ -319,61 +322,28 @@ export default class App extends React.Component {
         }
     }
 
-    // MultiSelectField(props) {
-    //     const [field, fieldOptions, { options, ...rest }] = splitFormProps(props);
-    
-    //     const {
-    //         value = [],
-    //         setValue,
-    //         meta: { isTouched, error }
-    //     } = useField(field, fieldOptions);
-    
-    //     const handleSelectChange = e => {
-    //         const selected = Array.from(e.target.options)
-    //             .filter(option => option.selected)
-    //             .map(option => option.value);
-    
-    //         setValue(selected);
-    //     };
-    
-    //     return (
-    //         <>
-    //             <select {...rest} value={value} onChange={handleSelectChange} multiple>
-    //                 <option disabled value="" />
-    //                 {options.map((option) => (
-    //                     <option key={option} value={option}>
-    //                         {option}
-    //                     </option>
-    //                 ))}
-    //             </select>
-    //             {isTouched && error ? <em>{error}</em> : null}
-    //         </>
-    //     );
-    // }
-
     handleChange(event) {
-        this.setState({})
+        this.setState({
+            [event.target.name]: event.target.value,
+        })
+    }
+    
+    async handleSubmit(values) {
+        alert('Inputs were submitted');
+        //send values to getPlaylist, once names are retrieved send info to giveToSpotify to convert
+        console.log(values);
+        var playlist = await this.getPlaylist(values.playlistLink);
+        console.log("Got Playlist!");
+        //find corresponding id
+        var index;
+        for(var i=0;i<this.state.userPlaylists.length;i++)
+        {
+            if(values.playlistName == this.state.userPlaylists[i]){index=i;break;}
+        }
+        this.giveToSpotify(playlist, values.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
     }
     
     render() {
-        // const  {
-        //     Form,
-        //     meta: { isSubmitting, canSubmit }
-        // } = useForm({
-        //     onSubmit: async (values, instance) => {
-        //         //send values to getPlaylist, once names are retrieved send info to giveToSpotify to convert
-        //         console.log(values);
-        //         var playlist = await this.getPlaylist(values.playlistLink);
-        //         console.log("Got Playlist!");
-        //         //find corresponding id
-        //         var index;
-        //         for(var i=0;i<this.state.userPlaylists.length;i++)
-        //         {
-        //             if(values.playlistName == this.state.userPlaylists[i]){index=i;break;}
-        //         }
-        //         this.giveToSpotify(playlist, values.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
-        //     }
-        // })
         return (
             <div className="App">
                 <header className="App-header">
@@ -401,26 +371,19 @@ export default class App extends React.Component {
                                     <div>
                                         <label>
                                             Youtube Playlist Link: 
-                                            <input type="text" name="playlistLink" />
+                                            <input type="text" name="playlistLink" value={this.state.value} onChange={this.handleChange} />
                                         </label>
                                     </div>
                                     <div id="playlistNameInput">
                                         <label>
                                             Spotify Playlist Name (Only Required if creating a new Playlist):
-                                            <input type="text" name="playlistReName" />
+                                            <input type="text" name="playlistReName" value={this.state.value} onChange={this.handleChange} />
                                         </label>
-                                        <select>
+                                        <select name="playlistName" value={this.state.value} onChange={this.handleChange}>
                                             Choose Playlist:{" "}
                                             {this.state.userPlaylists.map((name)=> {
                                                 return <option value={name}>{name}</option>
                                             })}
-                                            {/* <this.MultiSelectField
-                                                field="playlistName"
-                                                options={
-                                                    this.state.userPlaylists
-                                                }
-                                                validate={value => (!value ? "Required" : false)}
-                                            /> */}
                                         </select>
                                     </div>
                                     <div>
