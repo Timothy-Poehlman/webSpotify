@@ -68,7 +68,7 @@ export default class App extends React.Component {
         this.getPlaylist = this.getPlaylist.bind(this);
         this.createSpotifyPlaylist = this.createSpotifyPlaylist.bind(this);
         this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
+        this.submitPlaylistInfo = this.submitPlaylistInfo.bind(this);
     }
 
     componentDidMount() {
@@ -328,19 +328,18 @@ export default class App extends React.Component {
         })
     }
     
-    async handleSubmit(values) {
+    async submitPlaylistInfo() {
         alert('Inputs were submitted');
         //send values to getPlaylist, once names are retrieved send info to giveToSpotify to convert
-        console.log(values);
-        var playlist = await this.getPlaylist(values.playlistLink);
+        var playlist = await this.getPlaylist(this.state.playlistLink);
         console.log("Got Playlist!");
         //find corresponding id
         var index;
         for(var i=0;i<this.state.userPlaylists.length;i++)
         {
-            if(values.playlistName == this.state.userPlaylists[i]){index=i;break;}
+            if(this.state.playlistName == this.state.userPlaylists[i]){index=i;break;}
         }
-        this.giveToSpotify(playlist, values.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
+        this.giveToSpotify(playlist, this.state.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
     }
     
     render() {
@@ -386,10 +385,10 @@ export default class App extends React.Component {
                                             })}
                                         </select>
                                     </div>
-                                    <div>
-                                        <input type="submit" value="Submit"/>
-                                    </div>
                                 </form>
+                                <div>
+                                    <button name="submitButton" onClick={() => this.submitPlaylistInfo()}>SUBMIT</button>
+                                </div>
                             </div>
                         </div>
                     )}
