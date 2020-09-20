@@ -190,32 +190,20 @@ export default class App extends React.Component {
     */
     async giveToSpotify(youtubePlaylist, playlistName, playlistId, userId, token) {
         var playlist = [];
-    
-        //convert youtube list to best fitting spotify playlist song names - for now it just searches the title, but later we can try to extract the name of the artist
-        for (var i = 0; i < youtubePlaylist.length; i++) {
-            $.ajax({
-                url: "https://api.spotify.com/v1/search",
-                type: "GET",
-                data: JSON.stringify({q:youtubePlaylist[i].snippet.title, type:"track"}),
-                beforeSend: (xhr) => {
-                    xhr.setRequestHeader("Authorization", "Bearer " + token);
-                },
-                error: function (response) {
-                    alert(response.statusText);
-                    console.log(response.statusText);
-                    console.log("failed");
-                },
-                success: (data) => {
-                    if(data.length == 0)
-                    {
-                        this.setState({
-                            playlistUri: this.state.playlistUris.push(data.tracks.items[0].uri),
-                        });
-                    }
-                    else{console.log("Could not find song");}
-                }
-            });
-        }
+        console.log(youtubePlaylist);
+        await $.ajax({
+            url: "http://localhost:3001/searchSpotify/"+youtubePlaylist+"/"+token,
+            type: "GET",
+            error: (response) => {
+                alert(response.statusText);
+                console.log(response.statusText);
+            },
+            success: (data) => {
+                console.log(data);
+                playlist = data.searchResults;
+            }
+        });
+        console.log("playlist non server:");
         console.log(playlist);
     
     
@@ -223,12 +211,11 @@ export default class App extends React.Component {
     
         //create new playlist if requested
         var playlist_id = playlistId;
-        if(playlistId == "newPlaylist")
+        if(playlistId === "newPlaylist")
         {
             playlist_id = await this.createSpotifyPlaylist(userId, playlistName, token);
             playlist_id = playlist_id.id;
         }
-        console.log(playlist_id);
         //adds songs to the playlist
         var songUris;
         //construct uri, should be in format: uri1,uri2,uri3,...
@@ -251,7 +238,6 @@ export default class App extends React.Component {
             success: (data) => {
                 if(data)
                 {
-                    console.log(data.tracks.items);
                     return data.tracks.items[0].uri;
                 }
                 else{console.log("Could not find song");}
@@ -305,7 +291,6 @@ export default class App extends React.Component {
                 console.log("failed");
             },
             success: (data) => {
-                console.log(data.id);
                 return data.id;
             }
         });
@@ -317,8 +302,6 @@ export default class App extends React.Component {
             this.getCurrentlyPlaying(this.state.token);
             this.getUserInfo(this.state.token);
             this.getUserPlaylists(this.state.user_id,this.state.token);
-            console.log(this.state.playlistIds);
-            console.log("Got Data");
         }
     }
 
@@ -333,13 +316,14 @@ export default class App extends React.Component {
         //send values to getPlaylist, once names are retrieved send info to giveToSpotify to convert
         var playlist = await this.getPlaylist(this.state.playlistLink);
         console.log("Got Playlist!");
+        console.log(playlist);
         //find corresponding id
         var index;
         for(var i=0;i<this.state.userPlaylists.length;i++)
         {
-            if(this.state.playlistName == this.state.userPlaylists[i]){index=i;break;}
+            if(this.state.playlistName === this.state.userPlaylists[i]){index=i;break;}
         }
-        this.giveToSpotify(playlist, this.state.playlistReName, this.state.playlistIds[index], this.state.user_id, this.state.token)
+        this.giveToSpotify(playlist, this.state.playlistReName, this.state.userPlaylistsIds[index], this.state.user_id, this.state.token)
     }
     
     render() {
